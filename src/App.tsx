@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { Analytics } from '@vercel/analytics/react';
 import { routeTree } from './routeTree.gen'
 import { ThemeProvider } from './context/ThemeContext'
 import { AppProvider } from './context/AppContext'
@@ -42,6 +43,7 @@ function App() {
           <ReactQueryDevtools initialIsOpen={false} />
         </AppProvider>
       </ThemeProvider>
+      <Analytics />
     </QueryClientProvider>
   )
 }
