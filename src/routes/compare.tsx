@@ -84,8 +84,6 @@ function CompareComponent() {
     queryFn: () => fetchIndicatorData(INDICATORS.CO2_PER_CAPITA, selectedYear),
   })
 
-  console.log(countries)
-
   // Combine all data
   const chartData = useMemo<BubbleDataPoint[]>(() => {
     if (!countries || !gdpData || !co2Data) return []

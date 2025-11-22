@@ -498,7 +498,7 @@ During the development of the interactive world map and data visualizations, ext
   - Added error handling for indicator availability issues
 - 🎯 **Optimization Insights:**
   - Single-year queries: `date=2020` for snapshot comparisons
-  - Multi-year ranges: `date=2010:2020` for time-series analysis
+  - Multi-year ranges: `date=1990:2020` for time-series analysis
   - Country-specific queries vs global queries (`country/all/indicator/`)
   - Understanding data freshness and update cycles
 

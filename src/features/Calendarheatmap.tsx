@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 
@@ -107,7 +106,7 @@ export default function CalendarHeatmap({
       .domain([0, maxPrecipitation])
 
     // Create cells
-    const cells = g
+    g
       .selectAll('.cell')
       .data(parsedData)
       .join('rect')
@@ -182,7 +181,7 @@ export default function CalendarHeatmap({
       .join('text')
       .attr('class', 'day-label')
       .attr('x', -10)
-      .attr('y', (d, i) => i * (finalCellSize + cellPadding) + finalCellSize / 2)
+      .attr('y', (_, i) => i * (finalCellSize + cellPadding) + finalCellSize / 2)
       .attr('dy', '0.35em')
       .attr('text-anchor', 'end')
       .attr('class', 'text-sm font-medium fill-gray-700 dark:fill-gray-300')
