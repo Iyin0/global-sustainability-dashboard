@@ -62,10 +62,17 @@ export default function TemperatureLineChart({
     // Clear previous content
     d3.select(svgRef.current).selectAll('*').remove()
 
-    // Set up dimensions and margins
-    const margin = { top: 40, right: 80, bottom: 60, left: 60 }
-    const chartWidth = dimensions.width - margin.left - margin.right
-    const chartHeight = dimensions.height - margin.top - margin.bottom
+    // Responsive margins - reduce on mobile
+    const baseMargin = { top: 40, right: 20, bottom: 60, left: 60 }
+    const responsiveMargin = {
+      top: baseMargin.top,
+      right: dimensions.width < 640 ? 20 : baseMargin.right,
+      bottom: dimensions.width < 640 ? 70 : baseMargin.bottom, // Extra space for rotated labels
+      left: dimensions.width < 640 ? 40 : baseMargin.left,
+    }
+
+    const chartWidth = dimensions.width - responsiveMargin.left - responsiveMargin.right
+    const chartHeight = dimensions.height - responsiveMargin.top - responsiveMargin.bottom
 
     // Prevent rendering if dimensions are too small
     if (chartWidth <= 0 || chartHeight <= 0) return
@@ -78,7 +85,7 @@ export default function TemperatureLineChart({
 
     const g = svg
       .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
+      .attr('transform', `translate(${responsiveMargin.left},${responsiveMargin.top})`)
 
     // Parse dates
     const parseDate = d3.timeParse('%Y-%m-%d')
@@ -161,8 +168,24 @@ export default function TemperatureLineChart({
       .attr('stroke-width', 2)
       .attr('d', minLine)
 
-    // Add X axis
-    const xAxis = d3.axisBottom<Date>(xScale).ticks(12).tickFormat(d3.timeFormat('%b %Y'))
+    // Responsive tick filtering for X-axis
+    const getTickCount = (width: number) => {
+      if (width < 400) {
+        return 3 // Very few ticks on very small screens
+      } else if (width < 640) {
+        return 4 // Fewer ticks on small screens
+      } else if (width < 768) {
+        return 6 // Moderate ticks on tablets
+      } else {
+        return 12 // Full ticks on desktop
+      }
+    }
+
+    // Add X axis with responsive ticks
+    const xAxis = d3
+      .axisBottom<Date>(xScale)
+      .ticks(getTickCount(chartWidth))
+      .tickFormat(d3.timeFormat('%b %Y'))
 
     g.append('g')
       .attr('transform', `translate(0,${chartHeight})`)
@@ -186,52 +209,23 @@ export default function TemperatureLineChart({
     g.append('text')
       .attr('transform', 'rotate(-90)')
       .attr('x', -chartHeight / 2)
-      .attr('y', -45)
+      .attr('y', -30)
       .attr('text-anchor', 'middle')
       .attr('class', 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
       .text('Temperature (°C)')
 
-    // Add title
+    // Add title with responsive font size
+    const titleText = 'Daily Temperature Range - Last 12 Months'
+    const titleFontSize = dimensions.width < 640 ? 'text-sm' : 'text-lg'
+    const titleY = dimensions.width < 640 ? 20 : 25
+    
     svg
       .append('text')
       .attr('x', dimensions.width / 2)
-      .attr('y', 25)
+      .attr('y', titleY)
       .attr('text-anchor', 'middle')
-      .attr('class', 'text-lg font-bold fill-gray-800 dark:fill-gray-200')
-      .text('Daily Temperature Range - Last 12 Months')
-
-    // Add legend
-    const legend = svg
-      .append('g')
-      .attr('transform', `translate(${dimensions.width - margin.right + 10}, ${margin.top})`)
-
-    const legendItems = [
-      { label: 'Max Temp', color: '#ef4444' },
-      { label: 'Min Temp', color: '#3b82f6' },
-    ]
-
-    legendItems.forEach((item, i) => {
-      const legendRow = legend
-        .append('g')
-        .attr('transform', `translate(0, ${i * 25})`)
-
-      legendRow
-        .append('line')
-        .attr('x1', 0)
-        .attr('x2', 20)
-        .attr('y1', 8)
-        .attr('y2', 8)
-        .attr('stroke', item.color)
-        .attr('stroke-width', 2)
-
-      legendRow
-        .append('text')
-        .attr('x', 28)
-        .attr('y', 8)
-        .attr('dy', '0.32em')
-        .attr('class', 'text-xs fill-gray-700 dark:fill-gray-300')
-        .text(item.label)
-    })
+      .attr('class', `${titleFontSize} font-bold fill-gray-800 dark:fill-gray-200`)
+      .text(dimensions.width < 500 ? 'Temperature Range - 12 Months' : titleText)
 
     // Add overlay for tooltip
     const overlay = g
@@ -308,14 +302,31 @@ export default function TemperatureLineChart({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="w-full overflow-x-auto">
-        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="min-w-full" />
+      {/* Chart - fully responsive without horizontal scroll */}
+      <div className="w-full">
+        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="w-full" />
+      </div>
+
+      {/* Legend - moved to bottom */}
+      <div className="mt-4 flex flex-wrap gap-4 justify-center">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="w-8 h-0.5 rounded" style={{ backgroundColor: '#ef4444' }} />
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Max Temp
+          </span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="w-8 h-0.5 rounded" style={{ backgroundColor: '#3b82f6' }} />
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Min Temp
+          </span>
+        </div>
       </div>
 
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="fixed pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 text-sm z-10"
+        className="fixed pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-sm z-50"
         style={{ opacity: hoveredPoint ? 1 : 0 }}
       >
         {hoveredPoint && (

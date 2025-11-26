@@ -31,7 +31,7 @@ export type WorldBankApiResponse = [WorldBankMetadata, WorldBankIndicatorValue[]
 // Indicator codes
 export const INDICATORS = {
   GDP_PER_CAPITA: 'NY.GDP.PCAP.CD',
-  CO2_PER_CAPITA: 'EN.ATM.CO2E.PC',
+  CO2_PER_CAPITA: 'EN.GHG.CO2.PC.CE.AR5',
   RENEWABLE_ENERGY: 'EG.FEC.RNEW.ZS',
 } as const
 

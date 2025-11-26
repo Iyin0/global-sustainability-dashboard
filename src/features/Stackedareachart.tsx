@@ -70,10 +70,17 @@ export default function StackedAreaChart({
 
     if (chartData.length === 0) return
 
-    // Set up dimensions and margins
-    const margin = { top: 20, right: 120, bottom: 50, left: 60 }
-    const chartWidth = dimensions.width - margin.left - margin.right
-    const chartHeight = dimensions.height - margin.top - margin.bottom
+    // Responsive margins - reduce on mobile
+    const baseMargin = { top: 20, right: 20, bottom: 50, left: 60 }
+    const responsiveMargin = {
+      top: baseMargin.top,
+      right: dimensions.width < 640 ? 20 : baseMargin.right,
+      bottom: baseMargin.bottom,
+      left: dimensions.width < 640 ? 40 : baseMargin.left,
+    }
+
+    const chartWidth = dimensions.width - responsiveMargin.left - responsiveMargin.right
+    const chartHeight = dimensions.height - responsiveMargin.top - responsiveMargin.bottom
 
     // Prevent rendering if dimensions are too small
     if (chartWidth <= 0 || chartHeight <= 0) return
@@ -86,7 +93,7 @@ export default function StackedAreaChart({
 
     const g = svg
       .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
+      .attr('transform', `translate(${responsiveMargin.left},${responsiveMargin.top})`)
 
     // Create scales
     const xScale = d3
@@ -138,8 +145,32 @@ export default function StackedAreaChart({
         d3.select(this).attr('opacity', 0.8)
       })
 
-    // Add X axis
-    const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'))
+    // Get all years
+    const allYears = chartData.map(d => d.year).sort((a, b) => a - b)
+
+    // Responsive tick filtering for X-axis
+    const getTickValues = (width: number, years: number[]) => {
+      let step: number
+      
+      if (width < 400) {
+        step = 5 // Show every 5th year on very small screens
+      } else if (width < 640) {
+        step = 3 // Show every 3rd year on small screens
+      } else if (width < 768) {
+        step = 2 // Show every 2nd year on tablets
+      } else {
+        step = 1 // Show all years on desktop
+      }
+      
+      return years.filter((_, index) => index % step === 0)
+    }
+
+    // Add X axis with responsive ticks
+    const xAxis = d3
+      .axisBottom(xScale)
+      .tickValues(getTickValues(chartWidth, allYears))
+      .tickFormat(d3.format('d'))
+    
     g.append('g')
       .attr('transform', `translate(0,${chartHeight})`)
       .call(xAxis)
@@ -167,41 +198,10 @@ export default function StackedAreaChart({
     g.append('text')
       .attr('transform', 'rotate(-90)')
       .attr('x', -chartHeight / 2)
-      .attr('y', -45)
+      .attr('y', -30)
       .attr('text-anchor', 'middle')
       .attr('class', 'text-sm font-medium fill-gray-700 dark:fill-gray-300')
       .text('Energy Mix (%)')
-
-    // Add legend
-    const legend = svg
-      .append('g')
-      .attr('transform', `translate(${dimensions.width - margin.right + 10}, ${margin.top + 20})`)
-
-    const legendItems = [
-      { key: 'renewable', label: 'Renewable', color: '#10b981' },
-      { key: 'nonRenewable', label: 'Non-Renewable', color: '#ef4444' },
-    ]
-
-    legendItems.forEach((item, i) => {
-      const legendRow = legend
-        .append('g')
-        .attr('transform', `translate(0, ${i * 25})`)
-
-      legendRow
-        .append('rect')
-        .attr('width', 18)
-        .attr('height', 18)
-        .attr('fill', item.color)
-        .attr('opacity', 0.8)
-
-      legendRow
-        .append('text')
-        .attr('x', 24)
-        .attr('y', 9)
-        .attr('dy', '0.32em')
-        .attr('class', 'text-sm fill-gray-700 dark:fill-gray-300')
-        .text(item.label)
-    })
 
     // Add invisible overlay for tooltip
     const overlay = g
@@ -247,14 +247,31 @@ export default function StackedAreaChart({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="w-full overflow-x-auto">
-        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="min-w-full" />
+      {/* Chart - fully responsive without horizontal scroll */}
+      <div className="w-full">
+        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="w-full" />
+      </div>
+      
+      {/* Legend - moved to bottom */}
+      <div className="mt-4 flex flex-wrap gap-4 justify-center">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }} />
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Renewable
+          </span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }} />
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Non-Renewable
+          </span>
+        </div>
       </div>
       
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="absolute pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 text-sm z-10"
+        className="fixed pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 text-sm z-50"
         style={{ opacity: hoveredData ? 1 : 0 }}
       >
         {hoveredData && (

@@ -11,6 +11,7 @@ import NormalizationToggle from '@/components/NormalizationToggle'
 import StackedAreaChart from '@/features/Stackedareachart'
 import Loading from '@/components/Loading'
 import { useApp } from '@/context/AppContext'
+import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/country/$code/')({
   component: CountryDetailComponent,
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/country/$code/')({
 function CountryDetailComponent() {
   const { code } = Route.useParams()
   const countryCodeUpper = code.toUpperCase()
+  const navigate = useNavigate()
   
   // Convert ISO2 to ISO3 for World Bank API
   const iso3Code = convertISO2toISO3(countryCodeUpper)
@@ -44,7 +46,7 @@ function CountryDetailComponent() {
     [
       INDICATORS.GDP_PER_CAPITA,
       INDICATORS.RENEWABLE_ENERGY,
-      // INDICATORS.CO2_PER_CAPITA, // Temporarily disabled due to data issues
+      INDICATORS.CO2_PER_CAPITA,
     ],
     dateRange,
   )
@@ -122,14 +124,7 @@ function CountryDetailComponent() {
     <div className="mb-6">
       <button
         type="button"
-        onClick={() => {
-          // Go back to previous page if available, otherwise fall back to home
-          if (window.history.length > 1) {
-            window.history.back()
-          } else {
-            window.location.assign('/')
-          }
-        }}
+        onClick={() => navigate({ to: '/' })}
         className="inline-flex items-center gap-2 text-primary-600 dark:text-primary-400 hover:underline mb-4"
       >
         <ArrowLeft className="h-4 w-4" />

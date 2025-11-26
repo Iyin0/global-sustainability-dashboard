@@ -94,7 +94,7 @@ function CompareComponent() {
     return countries
       .map(country => {
         const gdp = gdpMap.get(country.cca2)
-        const co2 = co2Map.get(country.code)
+        const co2 = co2Map.get(country.cca2)
 
         if (!gdp || gdp === null) return null
 

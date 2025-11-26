@@ -95,8 +95,15 @@ export default function BubbleChart({
     // Clear previous content
     d3.select(svgRef.current).selectAll('*').remove()
 
-    // Set up dimensions and margins
-    const margin = { top: 40, right: 150, bottom: 60, left: 80 }
+    // Responsive margins
+    const isMobile = dimensions.width < 640
+    const margin = {
+      top: isMobile ? 50 : 40,
+      right: isMobile ? 20 : 20,
+      bottom: isMobile ? 70 : 60,
+      left: isMobile ? 50 : 80,
+    }
+    
     const chartWidth = dimensions.width - margin.left - margin.right
     const chartHeight = dimensions.height - margin.top - margin.bottom
 
@@ -132,11 +139,11 @@ export default function BubbleChart({
       .range([chartHeight, 0])
       .nice()
 
-    // Radius scale for population
+    // Radius scale for population - smaller on mobile
     const radiusScale = d3
       .scaleSqrt()
       .domain([0, d3.max(filteredData, d => d.population) || 1000000000])
-      .range([3, 40])
+      .range(isMobile ? [2, 25] : [3, 40])
 
     // Add grid lines
     g.append('g')
@@ -165,10 +172,23 @@ export default function BubbleChart({
       .attr('stroke-opacity', 0.1)
       .attr('class', 'stroke-gray-200 dark:stroke-gray-700')
 
-    // Add X axis
+    // Responsive tick counts
+    const getXTickCount = (width: number) => {
+      if (width < 400) return 3
+      if (width < 640) return 4
+      if (width < 768) return 6
+      return 8
+    }
+
+    const getYTickCount = (width: number) => {
+      if (width < 640) return 5
+      return 8
+    }
+
+    // Add X axis with responsive ticks
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(8, d3.format(',.0f'))
+      .ticks(getXTickCount(chartWidth), d3.format(',.0f'))
       .tickSize(-chartHeight)
 
     g.append('g')
@@ -177,11 +197,12 @@ export default function BubbleChart({
       .attr('class', 'text-gray-600 dark:text-gray-400')
       .selectAll('text')
       .attr('class', 'fill-gray-600 dark:fill-gray-400')
+      .style('font-size', isMobile ? '10px' : '12px')
 
-    // Add Y axis
+    // Add Y axis with responsive ticks
     const yAxis = d3
       .axisLeft(yScale)
-      .ticks(8, d3.format(',.1f'))
+      .ticks(getYTickCount(chartWidth), d3.format(',.1f'))
       .tickSize(-chartWidth)
 
     g.append('g')
@@ -189,32 +210,36 @@ export default function BubbleChart({
       .attr('class', 'text-gray-600 dark:text-gray-400')
       .selectAll('text')
       .attr('class', 'fill-gray-600 dark:fill-gray-400')
+      .style('font-size', isMobile ? '10px' : '12px')
 
     // Add X axis label
     g.append('text')
       .attr('x', chartWidth / 2)
-      .attr('y', chartHeight + 50)
+      .attr('y', chartHeight + (isMobile ? 45 : 50))
       .attr('text-anchor', 'middle')
-      .attr('class', 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
-      .text('GDP per Capita (USD, log scale)')
+      .attr('class', isMobile ? 'text-xs font-semibold fill-gray-700 dark:fill-gray-300' : 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
+      .text(isMobile ? 'GDP per Capita (USD)' : 'GDP per Capita (USD, log scale)')
 
     // Add Y axis label
     g.append('text')
       .attr('transform', 'rotate(-90)')
       .attr('x', -chartHeight / 2)
-      .attr('y', -60)
+      .attr('y', isMobile ? -35 : -60)
       .attr('text-anchor', 'middle')
-      .attr('class', 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
-      .text('CO₂ Emissions per Capita (tonnes, log scale)')
+      .attr('class', isMobile ? 'text-xs font-semibold fill-gray-700 dark:fill-gray-300' : 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
+      .text(isMobile ? 'CO₂ per Capita (t)' : 'CO₂ Emissions per Capita (tonnes, log scale)')
 
-    // Add title
+    // Add title with responsive sizing
+    const titleText = 'Country Comparison: GDP vs CO₂ Emissions'
+    const shortTitle = 'GDP vs CO₂ Emissions'
+    
     svg
       .append('text')
       .attr('x', dimensions.width / 2)
-      .attr('y', 25)
+      .attr('y', isMobile ? 25 : 25)
       .attr('text-anchor', 'middle')
-      .attr('class', 'text-lg font-bold fill-gray-800 dark:fill-gray-200')
-      .text('Country Comparison: GDP vs CO₂ Emissions')
+      .attr('class', isMobile ? 'text-base font-bold fill-gray-800 dark:fill-gray-200' : 'text-lg font-bold fill-gray-800 dark:fill-gray-200')
+      .text(isMobile ? shortTitle : titleText)
 
     // Create bubbles
     const bubbles = g
@@ -228,7 +253,7 @@ export default function BubbleChart({
       .attr('fill', d => regionColors[d.region] || '#6b7280')
       .attr('opacity', 0.7)
       .attr('stroke', '#fff')
-      .attr('stroke-width', 2)
+      .attr('stroke-width', isMobile ? 1 : 2)
       .style('cursor', 'pointer')
       .style('transition', 'all 0.2s')
 
@@ -238,22 +263,22 @@ export default function BubbleChart({
         // Highlight bubble
         d3.select(this)
           .attr('opacity', 1)
-          .attr('stroke-width', 3)
+          .attr('stroke-width', isMobile ? 2 : 3)
           .raise()
 
         setHoveredPoint(d)
 
-        // Position tooltip
+        // Position tooltip using clientX/clientY for proper positioning when page is scrolled
         if (tooltipRef.current) {
           const tooltip = d3.select(tooltipRef.current)
           tooltip
             .style('opacity', 1)
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 10}px`)
+            .style('left', `${event.clientX + 10}px`)
+            .style('top', `${event.clientY - 10}px`)
         }
       })
       .on('mouseout', function () {
-        d3.select(this).attr('opacity', 0.7).attr('stroke-width', 2)
+        d3.select(this).attr('opacity', 0.7).attr('stroke-width', isMobile ? 1 : 2)
 
         setHoveredPoint(null)
 
@@ -270,85 +295,6 @@ export default function BubbleChart({
         }
       })
 
-    // Add legend
-    const legend = svg
-      .append('g')
-      .attr('transform', `translate(${dimensions.width - margin.right + 20}, ${margin.top})`)
-
-    const regions = Object.keys(regionColors)
-    const legendItemHeight = 25
-
-    legend
-      .append('text')
-      .attr('x', 0)
-      .attr('y', -10)
-      .attr('class', 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
-      .text('Regions')
-
-    regions.forEach((region, i) => {
-      const legendRow = legend
-        .append('g')
-        .attr('transform', `translate(0, ${i * legendItemHeight})`)
-        .style('cursor', 'pointer')
-
-      legendRow
-        .append('circle')
-        .attr('cx', 8)
-        .attr('cy', 8)
-        .attr('r', 8)
-        .attr('fill', regionColors[region])
-        .attr('opacity', 0.7)
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1)
-
-      legendRow
-        .append('text')
-        .attr('x', 24)
-        .attr('y', 8)
-        .attr('dy', '0.32em')
-        .attr('class', 'text-xs fill-gray-700 dark:fill-gray-300')
-        .text(region)
-    })
-
-    // Add population legend (size reference)
-    const populationLegend = svg
-      .append('g')
-      .attr(
-        'transform',
-        `translate(${dimensions.width - margin.right + 20}, ${margin.top + regions.length * legendItemHeight + 40})`
-      )
-
-    populationLegend
-      .append('text')
-      .attr('x', 0)
-      .attr('y', -10)
-      .attr('class', 'text-sm font-semibold fill-gray-700 dark:fill-gray-300')
-      .text('Population')
-
-    const populationSamples = [10000000, 100000000, 1000000000]
-    populationSamples.forEach((pop, i) => {
-      const radius = radiusScale(pop)
-      const y = i * 50 + radius
-
-      populationLegend
-        .append('circle')
-        .attr('cx', 20)
-        .attr('cy', y)
-        .attr('r', radius)
-        .attr('fill', 'none')
-        .attr('stroke', 'currentColor')
-        .attr('stroke-width', 1)
-        .attr('class', 'stroke-gray-400 dark:stroke-gray-500')
-
-      populationLegend
-        .append('text')
-        .attr('x', 45)
-        .attr('y', y)
-        .attr('dy', '0.32em')
-        .attr('class', 'text-xs fill-gray-600 dark:fill-gray-400')
-        .text(d3.format('.2s')(pop))
-    })
-
     // Style axis lines
     svg
       .selectAll('.domain')
@@ -360,14 +306,69 @@ export default function BubbleChart({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <div className="w-full overflow-x-auto">
-        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="min-w-full" />
+      {/* Chart - fully responsive without horizontal scroll */}
+      <div className="w-full">
+        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="w-full" />
+      </div>
+
+      {/* Legend - moved to bottom */}
+      <div className="mt-6 space-y-4">
+        {/* Regions Legend */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-center">
+            Regions
+          </h3>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {Object.entries(regionColors).map(([region, color]) => (
+              <div
+                key={region}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+              >
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-white"
+                  style={{ backgroundColor: color, opacity: 0.7 }}
+                />
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {region}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Population Legend */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-center">
+            Population (Bubble Size)
+          </h3>
+          <div className="flex flex-wrap gap-4 justify-center items-center">
+            {[10000000, 100000000, 1000000000].map((pop) => {
+              const size = Math.sqrt(pop / 1000000000) * 40 // Approximate size
+              return (
+                <div key={pop} className="flex items-center gap-2">
+                  <div
+                    className="rounded-full border-2 border-gray-400 dark:border-gray-500"
+                    style={{
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      minWidth: `${size}px`,
+                      minHeight: `${size}px`,
+                    }}
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {d3.format('.2s')(pop)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="absolute pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 text-sm z-10 min-w-[200px]"
+        className="fixed pointer-events-none opacity-0 transition-opacity bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-4 text-sm z-50 min-w-[200px]"
         style={{ opacity: hoveredPoint ? 1 : 0 }}
       >
         {hoveredPoint && (

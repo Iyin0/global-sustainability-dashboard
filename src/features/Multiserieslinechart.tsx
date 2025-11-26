@@ -14,7 +14,7 @@ export default function MultiSeriesLineChart({
   series,
   width = 800,
   height = 400,
-  margin = { top: 20, right: 120, bottom: 50, left: 60 },
+  margin = { top: 20, right: 20, bottom: 50, left: 50 },
   normalizationMethod = 'minmax',
 }: MultiSeriesLineChartProps) {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -77,8 +77,16 @@ export default function MultiSeriesLineChart({
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
 
-    const innerWidth = dimensions.width - margin.left - margin.right
-    const innerHeight = dimensions.height - margin.top - margin.bottom
+    // Responsive margins - reduce on mobile
+    const responsiveMargin = {
+      top: margin.top,
+      right: dimensions.width < 640 ? 20 : margin.right,
+      bottom: margin.bottom,
+      left: dimensions.width < 640 ? 40 : margin.left,
+    }
+
+    const innerWidth = dimensions.width - responsiveMargin.left - responsiveMargin.right
+    const innerHeight = dimensions.height - responsiveMargin.top - responsiveMargin.bottom
 
     // Prevent rendering if dimensions are too small
     if (innerWidth <= 0 || innerHeight <= 0) return
@@ -86,7 +94,7 @@ export default function MultiSeriesLineChart({
     // Create main group
     const g = svg
       .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`)
+      .attr('transform', `translate(${responsiveMargin.left},${responsiveMargin.top})`)
 
     // Get all years from all series
     const allYears = Array.from(
@@ -113,8 +121,28 @@ export default function MultiSeriesLineChart({
       .range([innerHeight, 0])
       .nice()
 
-    // Create axes
-    const xAxis = d3.axisBottom(xScale).tickFormat(d => d.toString())
+    // Responsive tick filtering for X-axis
+    const getTickValues = (width: number, years: number[]) => {
+      let step: number
+      
+      if (width < 400) {
+        step = 5 // Show every 5th year on very small screens
+      } else if (width < 640) {
+        step = 3 // Show every 3rd year on small screens
+      } else if (width < 768) {
+        step = 2 // Show every 2nd year on tablets
+      } else {
+        step = 1 // Show all years on desktop
+      }
+      
+      return years.filter((_, index) => index % step === 0)
+    }
+
+    // Create axes with responsive ticks
+    const xAxis = d3
+      .axisBottom(xScale)
+      .tickValues(getTickValues(innerWidth, allYears))
+      .tickFormat(d => d.toString())
     const yAxis = d3.axisLeft(yScale)
 
     // Add X axis
@@ -248,8 +276,8 @@ export default function MultiSeriesLineChart({
         const svgRect = svgRef.current!.getBoundingClientRect()
         setTooltip({
           year,
-          x: svgRect.left + margin.left + x,
-          y: svgRect.top + margin.top,
+          x: svgRect.left + responsiveMargin.left + x,
+          y: svgRect.top + responsiveMargin.top,
           data: tooltipData,
         })
       })
@@ -261,13 +289,13 @@ export default function MultiSeriesLineChart({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Chart - now responsive with overflow handling */}
-      <div className="w-full overflow-x-auto">
+      {/* Chart - fully responsive without horizontal scroll */}
+      <div className="w-full">
         <svg
           ref={svgRef}
           width={dimensions.width}
           height={dimensions.height}
-          className="border border-gray-300 dark:border-gray-700 rounded-lg min-w-full"
+          className="border border-gray-300 dark:border-gray-700 rounded-lg w-full"
         />
       </div>
 
@@ -310,7 +338,7 @@ export default function MultiSeriesLineChart({
           className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 
                      rounded-lg shadow-xl px-3 py-2 pointer-events-none"
           style={{
-            left: `${tooltip.x + 15}px`,
+            left: `${tooltip.x - 150}px`,
             top: `${tooltip.y}px`,
           }}
         >

@@ -18,9 +18,46 @@ export default function ChoroplethMap({
   height = 600,
 }: WorldMapProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const [countries, setCountries] = useState<CountryFeatureCollection | null>(null)
+  const [dimensions, setDimensions] = useState({ width, height })
   const navigate = useNavigate()
+
+  // Handle responsive sizing
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const handleResize = () => {
+      const containerWidth = containerRef.current?.clientWidth || width
+      
+      // On mobile, use a minimum width to prevent truncation
+      const isMobile = window.innerWidth < 640
+      const effectiveWidth = isMobile 
+        ? Math.max(containerWidth, 500) // Minimum 500px width on mobile for better display
+        : containerWidth
+      
+      setDimensions({
+        width: effectiveWidth,
+        height: isMobile ? 400 : height, // Slightly shorter on mobile
+      })
+    }
+
+    // Set initial size
+    handleResize()
+
+    // Create ResizeObserver to watch container size changes
+    const resizeObserver = new ResizeObserver(handleResize)
+    resizeObserver.observe(containerRef.current)
+
+    // Fallback: also listen to window resize
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [width, height])
 
   // Load world topology
   useEffect(() => {
@@ -33,9 +70,10 @@ export default function ChoroplethMap({
 
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove() // Clear previous render
+    
     // Setup projection and path
     const projection = geoNaturalEarth1()
-      .fitSize([width, height], countries as unknown as FeatureCollection)
+      .fitSize([dimensions.width, dimensions.height], countries as unknown as FeatureCollection)
 
     const path = geoPath().projection(projection)
 
@@ -102,21 +140,25 @@ export default function ChoroplethMap({
         }
       })
 
-  }, [countries, data, width, height, navigate])
+  }, [countries, data, dimensions, navigate])
 
   return (
-    <div className="relative">
-      <svg
-        ref={svgRef}
-        width={width}
-        height={height}
-        className="border border-gray-300 dark:border-gray-700 rounded-lg"
-      />
+    <div ref={containerRef} className="relative w-full">
+      {/* Map container with horizontal scroll on mobile */}
+      <div className="w-full overflow-x-auto overflow-y-visible">
+        <svg
+          ref={svgRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          className="border border-gray-300 dark:border-gray-700 rounded-lg"
+          style={{ display: 'block' }} // Prevents extra space below SVG
+        />
+      </div>
 
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg px-3 py-2 pointer-events-none"
+          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl px-3 py-2 pointer-events-none"
           style={{
             left: `${tooltip.x + 10}px`,
             top: `${tooltip.y + 10}px`,

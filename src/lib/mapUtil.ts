@@ -187,6 +187,39 @@ export const countryCodeMap: Record<string, string> = {
   '887': 'YE', // Yemen
   '894': 'ZM', // Zambia
   '716': 'ZW', // Zimbabwe
+  '010': 'AQ', // Antarctica
+  '112': 'BY', // Belarus
+  '158': 'TW', // Taiwan
+  '304': 'GL', // Greenland
+  '328': 'GY', // Guyana
+  '496': 'MN', // Mongolia
+  '728': 'SS', // South Sudan
+  '051': 'AM', // Armenia
+  '031': 'AZ', // Azerbaijan
+  '262': 'DJ', // Djibouti
+  '204': 'BJ', // Benin
+  '242': 'FJ', // Fiji
+  '044': 'BS', // Bahamas
+  '084': 'BZ', // Belize
+  '238': 'FK', // Falkland Islands (Islas Malvinas)
+  '384': 'CI', // Côte d'Ivoire (Ivory Coast)
+  '624': 'GW', // Guinea-Bissau
+  '732': 'EH', // Western Sahara
+  '232': 'ER', // Eritrea
+  '999': 'SO-SL', // Somaliland (NOT internationally recognized; no ISO code)
+  '512': 'OM', // Oman
+  '634': 'QA', // Qatar
+  '807': 'MK', // North Macedonia
+  '383': 'XK', // Kosovo (UNMIK / ISO-like code "XK" used by EU/IMF/WB)
+  '144': 'LK', // Sri Lanka
+  '626': 'TL', // Timor-Leste (East Timor)
+  '096': 'BN', // Brunei
+  '408': 'KP', // North Korea
+  '090': 'SB', // Solomon Islands
+  '548': 'VU', // Vanuatu
+  '540': 'NC', // New Caledonia
+  '260': 'TF', // French Southern & Antarctic Lands (Fr. S. Antarctic Lands)
+  '270': 'GM', // Gambia
 }
 
 /**
