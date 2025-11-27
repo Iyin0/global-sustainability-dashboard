@@ -93,8 +93,8 @@ function CompareComponent() {
 
     return countries
       .map(country => {
-        const gdp = gdpMap.get(country.cca2)
-        const co2 = co2Map.get(country.cca2)
+        const gdp = gdpMap.get(country.cca2) as number | undefined
+        const co2 = co2Map.get(country.cca2) as number | undefined
 
         if (!gdp || gdp === null) return null
 
@@ -103,7 +103,7 @@ function CompareComponent() {
           cca2: country.cca2,
           name: country.name,
           gdpPerCapita: gdp,
-          co2PerCapita: co2,
+          co2PerCapita: co2 ? co2 : 0.0000001, // Avoid zero for log scale
           population: country.population,
           region: country.region,
         }

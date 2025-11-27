@@ -26,16 +26,16 @@ export function createColorScale(domain: [number, number]) {
   return scaleQuantize<string>()
     .domain(domain)
     .range([
-      '#fee5d9', // 0-10%
-      '#fcbba1', // 10-20%
-      '#fc9272', // 20-30%
-      '#fb6a4a', // 30-40%
-      '#ef3b2c', // 40-50%
-      '#cb181d', // 50-60%
-      '#99000d', // 60-70%
+      '#f7fcf5', // 0-10% - very light green
+      '#e5f5e0', // 10-20% - light green
+      '#c7e9c0', // 20-30% - pale green
+      '#a1d99b', // 30-40% - medium-light green
+      '#74c476', // 40-50% - medium green
+      '#41ab5d', // 50-60% - medium-dark green
+      '#238b45', // 60-70% - dark green
+      '#005a32', // 70%+ - very dark green
     ])
 }
-
 /**
  * Get country code mapping (ISO numeric to alpha-2)
  * This is a subset - expand as needed

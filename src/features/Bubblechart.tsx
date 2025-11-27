@@ -37,6 +37,14 @@ export default function BubbleChart({
   const [hoveredPoint, setHoveredPoint] = useState<BubbleDataPoint | null>(null)
   const navigate = useNavigate()
 
+  useEffect(() => {
+    data.forEach(d => {
+      if (d.name === 'Nauru') {
+        console.log(d)
+      }
+    })
+  }, [data])
+
   // Handle responsive sizing
   useEffect(() => {
     if (!containerRef.current) return
